@@ -66,46 +66,8 @@ import org.opensearch.sql.ast.expression.SpanUnit;
 import org.opensearch.sql.ast.expression.UnresolvedArgument;
 import org.opensearch.sql.ast.expression.UnresolvedExpression;
 import org.opensearch.sql.ast.expression.WindowFunction;
-import org.opensearch.sql.ast.tree.AD;
-import org.opensearch.sql.ast.tree.Aggregation;
-import org.opensearch.sql.ast.tree.Append;
-import org.opensearch.sql.ast.tree.AppendCol;
-import org.opensearch.sql.ast.tree.CountBin;
-import org.opensearch.sql.ast.tree.Dedupe;
-import org.opensearch.sql.ast.tree.DefaultBin;
-import org.opensearch.sql.ast.tree.DescribeRelation;
-import org.opensearch.sql.ast.tree.Eval;
-import org.opensearch.sql.ast.tree.Expand;
-import org.opensearch.sql.ast.tree.FillNull;
-import org.opensearch.sql.ast.tree.Filter;
-import org.opensearch.sql.ast.tree.Flatten;
-import org.opensearch.sql.ast.tree.Head;
-import org.opensearch.sql.ast.tree.Join;
-import org.opensearch.sql.ast.tree.Kmeans;
-import org.opensearch.sql.ast.tree.Lookup;
-import org.opensearch.sql.ast.tree.ML;
-import org.opensearch.sql.ast.tree.MinSpanBin;
-import org.opensearch.sql.ast.tree.Parse;
-import org.opensearch.sql.ast.tree.Patterns;
-import org.opensearch.sql.ast.tree.Project;
-import org.opensearch.sql.ast.tree.RangeBin;
-import org.opensearch.sql.ast.tree.RareTopN;
+import org.opensearch.sql.ast.tree.*;
 import org.opensearch.sql.ast.tree.RareTopN.CommandType;
-import org.opensearch.sql.ast.tree.Regex;
-import org.opensearch.sql.ast.tree.Relation;
-import org.opensearch.sql.ast.tree.Rename;
-import org.opensearch.sql.ast.tree.Reverse;
-import org.opensearch.sql.ast.tree.Rex;
-import org.opensearch.sql.ast.tree.SPath;
-import org.opensearch.sql.ast.tree.Search;
-import org.opensearch.sql.ast.tree.Sort;
-import org.opensearch.sql.ast.tree.SpanBin;
-import org.opensearch.sql.ast.tree.SubqueryAlias;
-import org.opensearch.sql.ast.tree.TableFunction;
-import org.opensearch.sql.ast.tree.Timechart;
-import org.opensearch.sql.ast.tree.Trendline;
-import org.opensearch.sql.ast.tree.UnresolvedPlan;
-import org.opensearch.sql.ast.tree.Window;
 import org.opensearch.sql.common.setting.Settings;
 import org.opensearch.sql.common.setting.Settings.Key;
 import org.opensearch.sql.common.utils.StringUtils;
@@ -722,6 +684,13 @@ public class AstBuilder extends OpenSearchPPLParserBaseVisitor<UnresolvedPlan> {
     Field fieldExpression = (Field) internalVisitExpression(ctx.fieldExpression());
     String alias = ctx.alias != null ? internalVisitExpression(ctx.alias).toString() : null;
     return new Expand(fieldExpression, alias);
+  }
+
+  /** mvexpand command. */
+  @Override
+  public UnresolvedPlan visitMvexpandCommand(OpenSearchPPLParser.MvexpandCommandContext ctx) {
+    Field fieldExpression = (Field) internalVisitExpression(ctx.fieldExpression());
+    return new MvExpand(fieldExpression);
   }
 
   @Override

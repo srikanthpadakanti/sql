@@ -78,6 +78,7 @@ commands
    | regexCommand
    | timechartCommand
    | rexCommand
+   | mvexpandCommand
    ;
 
 commandName
@@ -115,6 +116,7 @@ commandName
    | REGEX
    | APPEND
    | REX
+   | MVEXPAND
    ;
 
 searchCommand
@@ -165,6 +167,10 @@ searchComparisonOperator
  | NOT_LESS                                          # greaterOrEqual
  ;
 
+
+mvexpandCommand
+   : MVEXPAND fieldExpression
+   ;
 
 describeCommand
    : DESCRIBE tableSourceClause

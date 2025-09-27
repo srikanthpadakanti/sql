@@ -6,6 +6,7 @@
 package org.opensearch.sql.planner;
 
 import org.opensearch.sql.executor.pagination.PlanSerializer;
+import org.opensearch.sql.expression.ReferenceExpression;
 import org.opensearch.sql.planner.logical.LogicalAggregation;
 import org.opensearch.sql.planner.logical.LogicalCloseCursor;
 import org.opensearch.sql.planner.logical.LogicalDedupe;
@@ -13,6 +14,7 @@ import org.opensearch.sql.planner.logical.LogicalEval;
 import org.opensearch.sql.planner.logical.LogicalFetchCursor;
 import org.opensearch.sql.planner.logical.LogicalFilter;
 import org.opensearch.sql.planner.logical.LogicalLimit;
+import org.opensearch.sql.planner.logical.LogicalMvExpand;
 import org.opensearch.sql.planner.logical.LogicalNested;
 import org.opensearch.sql.planner.logical.LogicalPaginate;
 import org.opensearch.sql.planner.logical.LogicalPlan;
@@ -26,23 +28,7 @@ import org.opensearch.sql.planner.logical.LogicalSort;
 import org.opensearch.sql.planner.logical.LogicalTrendline;
 import org.opensearch.sql.planner.logical.LogicalValues;
 import org.opensearch.sql.planner.logical.LogicalWindow;
-import org.opensearch.sql.planner.physical.AggregationOperator;
-import org.opensearch.sql.planner.physical.CursorCloseOperator;
-import org.opensearch.sql.planner.physical.DedupeOperator;
-import org.opensearch.sql.planner.physical.EvalOperator;
-import org.opensearch.sql.planner.physical.FilterOperator;
-import org.opensearch.sql.planner.physical.LimitOperator;
-import org.opensearch.sql.planner.physical.NestedOperator;
-import org.opensearch.sql.planner.physical.PhysicalPlan;
-import org.opensearch.sql.planner.physical.ProjectOperator;
-import org.opensearch.sql.planner.physical.RareTopNOperator;
-import org.opensearch.sql.planner.physical.RemoveOperator;
-import org.opensearch.sql.planner.physical.RenameOperator;
-import org.opensearch.sql.planner.physical.SortOperator;
-import org.opensearch.sql.planner.physical.TakeOrderedOperator;
-import org.opensearch.sql.planner.physical.TrendlineOperator;
-import org.opensearch.sql.planner.physical.ValuesOperator;
-import org.opensearch.sql.planner.physical.WindowOperator;
+import org.opensearch.sql.planner.physical.*;
 import org.opensearch.sql.storage.read.TableScanBuilder;
 import org.opensearch.sql.storage.write.TableWriteBuilder;
 
@@ -181,6 +167,16 @@ public class DefaultImplementor<C> extends LogicalPlanNodeVisitor<PhysicalPlan, 
   @Override
   public PhysicalPlan visitPaginate(LogicalPaginate plan, C context) {
     return visitChild(plan, context);
+  }
+
+  @Override
+  public PhysicalPlan visitMvExpand(LogicalMvExpand node, C context) {
+    PhysicalPlan childPhysicalPlan = visitChild(node, context);
+    if (childPhysicalPlan == null) {
+      // Use a no-op physical plan to gracefully handle missing input
+      childPhysicalPlan = new NoOpPhysicalPlan();
+    }
+    return new MvExpandOperator(childPhysicalPlan, (ReferenceExpression) node.getFieldExpr());
   }
 
   protected PhysicalPlan visitChild(LogicalPlan node, C context) {

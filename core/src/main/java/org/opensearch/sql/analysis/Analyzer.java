@@ -56,45 +56,8 @@ import org.opensearch.sql.ast.expression.PatternMode;
 import org.opensearch.sql.ast.expression.QualifiedName;
 import org.opensearch.sql.ast.expression.UnresolvedExpression;
 import org.opensearch.sql.ast.expression.WindowFunction;
-import org.opensearch.sql.ast.tree.AD;
-import org.opensearch.sql.ast.tree.Aggregation;
-import org.opensearch.sql.ast.tree.Append;
-import org.opensearch.sql.ast.tree.AppendCol;
-import org.opensearch.sql.ast.tree.Bin;
-import org.opensearch.sql.ast.tree.CloseCursor;
-import org.opensearch.sql.ast.tree.Dedupe;
-import org.opensearch.sql.ast.tree.Eval;
-import org.opensearch.sql.ast.tree.Expand;
-import org.opensearch.sql.ast.tree.FetchCursor;
-import org.opensearch.sql.ast.tree.FillNull;
-import org.opensearch.sql.ast.tree.Filter;
-import org.opensearch.sql.ast.tree.Flatten;
-import org.opensearch.sql.ast.tree.Head;
-import org.opensearch.sql.ast.tree.Join;
-import org.opensearch.sql.ast.tree.Kmeans;
-import org.opensearch.sql.ast.tree.Limit;
-import org.opensearch.sql.ast.tree.Lookup;
-import org.opensearch.sql.ast.tree.ML;
-import org.opensearch.sql.ast.tree.Paginate;
-import org.opensearch.sql.ast.tree.Parse;
-import org.opensearch.sql.ast.tree.Patterns;
-import org.opensearch.sql.ast.tree.Project;
-import org.opensearch.sql.ast.tree.RareTopN;
-import org.opensearch.sql.ast.tree.Regex;
-import org.opensearch.sql.ast.tree.Relation;
-import org.opensearch.sql.ast.tree.RelationSubquery;
-import org.opensearch.sql.ast.tree.Rename;
-import org.opensearch.sql.ast.tree.Reverse;
-import org.opensearch.sql.ast.tree.Rex;
-import org.opensearch.sql.ast.tree.Search;
-import org.opensearch.sql.ast.tree.Sort;
+import org.opensearch.sql.ast.tree.*;
 import org.opensearch.sql.ast.tree.Sort.SortOption;
-import org.opensearch.sql.ast.tree.SubqueryAlias;
-import org.opensearch.sql.ast.tree.TableFunction;
-import org.opensearch.sql.ast.tree.Timechart;
-import org.opensearch.sql.ast.tree.Trendline;
-import org.opensearch.sql.ast.tree.UnresolvedPlan;
-import org.opensearch.sql.ast.tree.Values;
 import org.opensearch.sql.common.antlr.SyntaxCheckException;
 import org.opensearch.sql.data.model.ExprMissingValue;
 import org.opensearch.sql.data.type.ExprCoreType;
@@ -113,27 +76,7 @@ import org.opensearch.sql.expression.function.BuiltinFunctionRepository;
 import org.opensearch.sql.expression.function.FunctionName;
 import org.opensearch.sql.expression.function.TableFunctionImplementation;
 import org.opensearch.sql.expression.parse.ParseExpression;
-import org.opensearch.sql.planner.logical.LogicalAD;
-import org.opensearch.sql.planner.logical.LogicalAggregation;
-import org.opensearch.sql.planner.logical.LogicalCloseCursor;
-import org.opensearch.sql.planner.logical.LogicalDedupe;
-import org.opensearch.sql.planner.logical.LogicalEval;
-import org.opensearch.sql.planner.logical.LogicalFetchCursor;
-import org.opensearch.sql.planner.logical.LogicalFilter;
-import org.opensearch.sql.planner.logical.LogicalLimit;
-import org.opensearch.sql.planner.logical.LogicalML;
-import org.opensearch.sql.planner.logical.LogicalMLCommons;
-import org.opensearch.sql.planner.logical.LogicalPaginate;
-import org.opensearch.sql.planner.logical.LogicalPlan;
-import org.opensearch.sql.planner.logical.LogicalProject;
-import org.opensearch.sql.planner.logical.LogicalRareTopN;
-import org.opensearch.sql.planner.logical.LogicalRelation;
-import org.opensearch.sql.planner.logical.LogicalRemove;
-import org.opensearch.sql.planner.logical.LogicalRename;
-import org.opensearch.sql.planner.logical.LogicalSort;
-import org.opensearch.sql.planner.logical.LogicalTrendline;
-import org.opensearch.sql.planner.logical.LogicalValues;
-import org.opensearch.sql.planner.logical.LogicalWindow;
+import org.opensearch.sql.planner.logical.*;
 import org.opensearch.sql.planner.physical.datasource.DataSourceTable;
 import org.opensearch.sql.storage.Table;
 import org.opensearch.sql.utils.ParseUtils;
@@ -694,6 +637,16 @@ public class Analyzer extends AbstractNodeVisitor<LogicalPlan, AnalysisContext> 
   @Override
   public LogicalPlan visitExpand(Expand expand, AnalysisContext context) {
     throw getOnlyForCalciteException("Expand");
+  }
+
+  @Override
+  public LogicalPlan visitMvExpand(MvExpand node, AnalysisContext context) {
+    System.out.println(
+        "DEBUG: Entered visitMvExpand with node=" + node + " field=" + node.getField());
+    LogicalPlan child = node.getChild().get(0).accept(this, context);
+    Field field = node.getField();
+    // Use DSL method if available, otherwise directly construct
+    return LogicalPlanDSL.mvexpand(child, field);
   }
 
   /** Build {@link LogicalTrendline} for Trendline command. */

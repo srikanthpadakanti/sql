@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
+import org.opensearch.sql.ast.expression.Field;
 import org.opensearch.sql.ast.expression.Literal;
 import org.opensearch.sql.ast.tree.RareTopN.CommandType;
 import org.opensearch.sql.ast.tree.Sort.SortOption;
@@ -79,6 +80,10 @@ public class LogicalPlanDSL {
       List<NamedExpression> fields,
       List<NamedExpression> namedParseExpressions) {
     return new LogicalProject(input, fields, namedParseExpressions);
+  }
+
+  public static LogicalPlan mvexpand(LogicalPlan input, Field field) {
+    return new LogicalMvExpand(input, field);
   }
 
   public LogicalPlan window(

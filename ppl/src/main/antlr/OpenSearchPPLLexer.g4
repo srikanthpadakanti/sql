@@ -59,6 +59,7 @@ OFFSET_FIELD:                       'OFFSET_FIELD';
 BUFFER_LIMIT:                       'BUFFER_LIMIT';
 LABEL:                              'LABEL';
 AGGREGATION:                        'AGGREGATION';
+MVEXPAND :                          'MVEXPAND';
 
 //Native JOIN KEYWORDS
 JOIN:                               'JOIN';
