@@ -22,7 +22,7 @@ import org.opensearch.sql.expression.ReferenceExpression;
 public class MvExpandOperator extends PhysicalPlan {
 
   private final PhysicalPlan input;
-  private final ReferenceExpression fieldExpr;
+  private final String fieldName;
   private Iterator<ExprValue> expandedIterator = Collections.emptyIterator();
 
   public MvExpandOperator(PhysicalPlan input, ReferenceExpression fieldExpr) {
@@ -31,7 +31,8 @@ public class MvExpandOperator extends PhysicalPlan {
     if (fieldExpr == null) {
       throw new IllegalArgumentException("MvExpandOperator fieldExpr cannot be null");
     }
-    this.fieldExpr = fieldExpr;
+    // Use the field name as string, same as other operators
+    this.fieldName = fieldExpr.toString();
   }
 
   @Override
@@ -39,17 +40,17 @@ public class MvExpandOperator extends PhysicalPlan {
     if (expandedIterator.hasNext()) {
       return true;
     }
-
     while (input != null && input.hasNext()) {
       ExprValue inputRow = input.next();
-      Object mvValue = fieldExpr.valueOf(inputRow.bindingTuples()).value();
-
+      System.out.println("DEBUG: inputRow = " + inputRow); // Print the tuple/map
+      if (inputRow == null) {
+        continue;
+      }
+      Object mvValue = inputRow.tupleValue().get(fieldName);
+      // Skip if field missing or null
       if (mvValue == null) {
         continue;
       }
-
-      String fieldName = fieldExpr.toString();
-
       if (mvValue instanceof List<?>) {
         List<?> mvList = (List<?>) mvValue;
         if (mvList.isEmpty()) {
@@ -68,7 +69,6 @@ public class MvExpandOperator extends PhysicalPlan {
         expandedIterator =
             Collections.singletonList(ExprValueUtils.tupleValue(newTuple)).iterator();
       }
-
       if (expandedIterator.hasNext()) {
         return true;
       }
