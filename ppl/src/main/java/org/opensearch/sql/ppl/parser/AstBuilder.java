@@ -154,7 +154,7 @@ public class AstBuilder extends OpenSearchPPLParserBaseVisitor<UnresolvedPlan> {
     UnresolvedPlan pplCommand = visit(ctx.pplCommands());
     return ctx.commands().stream()
         .map(this::visit)
-        .reduce(pplCommand, (r, e) -> e.attach(e instanceof Join ? projectExceptMeta(r) : r));
+        .reduce(pplCommand, (r, e) -> r.attach(e instanceof Join ? projectExceptMeta(e) : e));
   }
 
   @Override

@@ -18,7 +18,9 @@ import org.opensearch.sql.expression.ReferenceExpression;
 
 /**
  * Physical operator for the mvexpand command. Expands multi-value fields into separate rows,
- * handling nulls and empty arrays gracefully.
+ * handling nulls, empty arrays, and scalars according to SPL semantics.
+ *
+ * <p>DEBUG statements included for tracing all steps.
  */
 public class MvExpandOperator extends PhysicalPlan {
 
@@ -47,7 +49,7 @@ public class MvExpandOperator extends PhysicalPlan {
     }
     while (input != null && input.hasNext()) {
       ExprValue inputRow = input.next();
-      System.out.println("DEBUG: inputRow = " + inputRow); // Print the tuple/map
+      System.out.println("DEBUG: inputRow = " + inputRow);
       if (inputRow == null) {
         System.out.println("DEBUG: inputRow is null, skipping");
         continue;
@@ -57,21 +59,23 @@ public class MvExpandOperator extends PhysicalPlan {
       ExprValue ev = tuple.get(fieldName);
       System.out.println("DEBUG: ExprValue for field '" + fieldName + "' = " + ev);
 
-      if (ev == null || ev.isNull() || ev.isMissing()) {
-        System.out.println("DEBUG: ExprValue is null or missing, skipping");
-        continue;
-      }
-      Object mvValue = ev.value();
+      Object mvValue = (ev != null && !ev.isNull() && !ev.isMissing()) ? ev.value() : null;
       System.out.println("DEBUG: mvValue (unwrapped) = " + mvValue);
+
+      // SPL mvexpand semantics:
+      // - If array, emit one row per element.
+      // - If scalar, emit as one row.
+      // - If empty array or null, skip.
+
+      List<ExprValue> expandedRows = new ArrayList<>();
 
       if (mvValue instanceof List<?>) {
         List<?> mvList = (List<?>) mvValue;
         System.out.println("DEBUG: mvList size = " + mvList.size());
         if (mvList.isEmpty()) {
-          System.out.println("DEBUG: mvList is empty, skipping");
+          System.out.println("DEBUG: mvList is empty, skipping row entirely");
           continue;
         }
-        List<ExprValue> expandedRows = new ArrayList<>(mvList.size());
         for (Object val : mvList) {
           System.out.println("DEBUG: expanding value = " + val);
           Map<String, Object> newTuple = new HashMap<>();
@@ -93,7 +97,7 @@ public class MvExpandOperator extends PhysicalPlan {
                   "DEBUG: ExprValueUtils.tupleValue returned null for newTuple: "
                       + newTuple
                       + " -- SKIPPING");
-              continue; // DO NOT add nulls to expandedRows!
+              continue;
             }
             expandedRows.add(expanded);
           } catch (Exception e) {
@@ -103,10 +107,8 @@ public class MvExpandOperator extends PhysicalPlan {
             continue;
           }
         }
-        expandedRows.removeIf(e -> e == null); // Defensive: remove any nulls
-        expandedIterator = expandedRows.iterator();
-      } else {
-        System.out.println("DEBUG: mvValue is single value, expanding = " + mvValue);
+      } else if (mvValue != null) {
+        System.out.println("DEBUG: mvValue is scalar, expanding as single row");
         Map<String, Object> newTuple = new HashMap<>();
         for (Map.Entry<String, ExprValue> entry : tuple.entrySet()) {
           Object value = entry.getValue() != null ? entry.getValue().value() : null;
@@ -126,22 +128,27 @@ public class MvExpandOperator extends PhysicalPlan {
                 "DEBUG: ExprValueUtils.tupleValue returned null for newTuple: "
                     + newTuple
                     + " -- SKIPPING");
-            expandedIterator = Collections.emptyIterator();
           } else {
-            expandedIterator = Collections.singletonList(expanded).iterator();
+            expandedRows.add(expanded);
           }
         } catch (Exception e) {
           System.out.println(
               "DEBUG: Exception in tupleValue: " + e.getMessage() + " for newTuple: " + newTuple);
           e.printStackTrace();
-          expandedIterator = Collections.emptyIterator();
         }
+      } else {
+        System.out.println("DEBUG: mvValue is null or missing, skipping row entirely");
+        // skip
       }
-      if (expandedIterator.hasNext()) {
-        System.out.println("DEBUG: expandedIterator is ready, returning true");
+
+      if (!expandedRows.isEmpty()) {
+        expandedRows.removeIf(e -> e == null); // Defensive: remove any nulls
+        expandedIterator = expandedRows.iterator();
+        System.out.println(
+            "DEBUG: expandedIterator prepared with " + expandedRows.size() + " expanded rows");
         return true;
       } else {
-        System.out.println("DEBUG: expandedIterator is empty after expansion");
+        System.out.println("DEBUG: expandedRows is empty after expansion");
       }
     }
     System.out.println("DEBUG: hasNext exhausted all input");
@@ -172,7 +179,6 @@ public class MvExpandOperator extends PhysicalPlan {
   @Override
   public List<PhysicalPlan> getChild() {
     System.out.println("DEBUG: getChild() called");
-    // Defensive: never return [null]
     if (input == null) {
       System.out.println("DEBUG: getChild() input is null, returning empty list");
       return Collections.emptyList();
