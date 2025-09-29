@@ -119,4 +119,8 @@ public class PhysicalPlanDSL {
       PhysicalPlan input, Set<String> args, Map<String, List<String>> groupedFieldsByPath) {
     return new NestedOperator(input, args, groupedFieldsByPath);
   }
+
+  public static MvExpandOperator mvexpand(PhysicalPlan input, ReferenceExpression fieldExpr) {
+    return new MvExpandOperator(input, fieldExpr);
+  }
 }
