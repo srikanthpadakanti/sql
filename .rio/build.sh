@@ -8,12 +8,10 @@ for jdk in 11 17 21 24; do
     export "JAVA${jdk}_HOME"="$(readlink -f /app/.runtimes/jdk)"
 done
 
-curl -LO https://artifacts.apple.com/crypto-services-binaries-local/whisperctl/prod/${WHISPER_VERSION}/whisperctl_${WHISPER_VERSION}_linux_amd64.tar.gz
-tar -xf whisperctl_${WHISPER_VERSION}_linux_amd64.tar.gz
-mv whisperctl /usr/local/bin
-
 export GRADLE_USER_HOME="${NON_ROOT_USER_HOME}/.gradle"
-openssl x509 -in $RIO_NARRATIVE_CHAIN_PATH -text
+
+.rio/install-whisper.sh
+
 whisperctl secret fetch \
   --output-dir "$GRADLE_USER_HOME" \
   --secret-name 'gradle.properties' \
