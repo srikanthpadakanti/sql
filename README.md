@@ -1,5 +1,8 @@
 <img src="https://opensearch.org/assets/brand/SVG/Logo/opensearch_logo_default.svg" height="64px"/>
 
+[![loading...](https://badges.pie.apple.com/badges/rio?p=ist-aidp-opensearch-dev-sql&s=ist-aidp-opensearch-dev-sql-check-main-apple-on-commit&l=rio-check-main)](https://rio.apple.com/projects/ist-aidp-opensearch-dev-sql)
+[![loading...](https://badges.pie.apple.com/badges/rio?p=ist-aidp-opensearch-dev-sql&s=ist-aidp-opensearch-dev-sql-sync-mirror&l=rio-sync-mirror)](https://rio.apple.com/projects/ist-aidp-opensearch-dev-sql)
+
 - [OpenSearch SQL](#opensearch-sql)
   - [Code Summary](#code-summary)
     - [SQL Engine](#sql-engine)
