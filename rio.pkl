@@ -1,0 +1,3 @@
+@ModuleInfo { minPklVersion = "0.24.0" }
+amends "package://artifacts.apple.com/pkl/apple/aidp-opensearch-dev/rio-pipelines@0.0.17#/rio.pkl"
+GRADLE_COMMAND = "clean precommit test"
