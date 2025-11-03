@@ -19,7 +19,6 @@ import static org.opensearch.sql.util.MatcherUtils.assertYamlEqualsIgnoreId;
 
 import java.io.IOException;
 import java.util.Locale;
-import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.opensearch.sql.common.setting.Settings;
@@ -424,20 +423,14 @@ public class CalciteExplainIT extends ExplainIT {
   @Test
   public void testExplainWithTimechartAvg() throws IOException {
     var result = explainQueryYaml("source=events | timechart span=1m avg(cpu_usage) by host");
-    String expected =
-        !isPushdownDisabled()
-            ? loadFromFile("expectedOutput/calcite/explain_timechart.yaml")
-            : loadFromFile("expectedOutput/calcite/explain_timechart_no_pushdown.yaml");
+    String expected = loadExpectedPlan("explain_timechart.yaml");
     assertYamlEqualsIgnoreId(expected, result);
   }
 
   @Test
   public void testExplainWithTimechartCount() throws IOException {
     var result = explainQueryYaml("source=events | timechart span=1m count() by host");
-    String expected =
-        !isPushdownDisabled()
-            ? loadFromFile("expectedOutput/calcite/explain_timechart_count.yaml")
-            : loadFromFile("expectedOutput/calcite/explain_timechart_count_no_pushdown.yaml");
+    String expected = loadExpectedPlan("explain_timechart_count.yaml");
     assertYamlEqualsIgnoreId(expected, result);
   }
 
@@ -487,9 +480,9 @@ public class CalciteExplainIT extends ExplainIT {
     String query =
         "source=opensearch-sql_test_index_account | patterns address method=BRAIN  | stats count()"
             + " by patterns_field";
-    var result = explainQueryToString(query);
-    String expected = loadFromFile("expectedOutput/calcite/explain_agg_on_window.json");
-    assertJsonEqualsIgnoreId(expected, result);
+    var result = explainQueryYaml(query);
+    String expected = loadFromFile("expectedOutput/calcite/explain_agg_on_window.yaml");
+    assertYamlEqualsIgnoreId(expected, result);
   }
 
   // Only for Calcite
@@ -1446,9 +1439,7 @@ public class CalciteExplainIT extends ExplainIT {
   @Test
   public void testNestedAggregationsExplain() throws IOException {
     // TODO: Remove after resolving: https://github.com/opensearch-project/sql/issues/4578
-    Assume.assumeFalse(
-        "The query runs into error when pushdown is disabled due to bin's implementation",
-        isPushdownDisabled());
+    enabledOnlyWhenPushdownIsEnabled();
     assertYamlEqualsIgnoreId(
         loadExpectedPlan("agg_composite_autodate_range_metric_push.yaml"),
         explainQueryYaml(
@@ -1481,6 +1472,18 @@ public class CalciteExplainIT extends ExplainIT {
         explainQueryYaml(
             String.format(
                 "source=%s | eval info = geoip('my-datasource', host) | stats count() by info.city",
+                TEST_INDEX_WEBLOGS)));
+  }
+
+  @Test
+  public void testInternalItemAccessOnStructs() throws IOException {
+    String expected = loadExpectedPlan("access_struct_subfield_with_item.yaml");
+    assertYamlEqualsIgnoreId(
+        expected,
+        explainQueryYaml(
+            String.format(
+                "source=%s | eval info = geoip('dummy-datasource', host) | fields host, info,"
+                    + " info.dummy_sub_field",
                 TEST_INDEX_WEBLOGS)));
   }
 }
