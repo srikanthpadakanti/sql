@@ -5,6 +5,7 @@
 
 package org.opensearch.sql.security;
 
+import static org.opensearch.sql.legacy.TestsConstants.TEST_INDEX_BANK;
 import static org.opensearch.sql.util.MatcherUtils.columnName;
 import static org.opensearch.sql.util.MatcherUtils.rows;
 import static org.opensearch.sql.util.MatcherUtils.schema;
@@ -482,5 +483,16 @@ public class CalciteCrossClusterSearchIT extends CrossClusterTestBase {
                 TEST_INDEX_MVEXPAND_REMOTE));
     verifySchema(result, schema("username", "string"), schema("skills.name", "string"));
     verifyDataRows(result, rows("limituser", "a"), rows("limituser", "b"));
+  }
+
+  @Test
+  public void testCrossClusterUnion() throws IOException {
+    JSONObject result =
+        executeQuery(
+            String.format(
+                "| union [search source=%s | where age < 30] [search source=%s | where age >= 30] |"
+                    + " stats count() by gender",
+                TEST_INDEX_BANK_REMOTE, TEST_INDEX_BANK));
+    verifyColumn(result, columnName("count()"), columnName("gender"));
   }
 }

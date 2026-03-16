@@ -237,4 +237,16 @@ public class CrossClusterSearchIT extends CrossClusterTestBase {
 
     disableCalcite();
   }
+
+  @Test
+  public void testCrossClusterUnion() throws IOException {
+    // Test union with remote cluster tables
+    JSONObject result =
+        executeQuery(
+            String.format(
+                "| union [search source=%s | where age < 30] [search source=%s | where age >= 30] |"
+                    + " stats count() by gender",
+                TEST_INDEX_BANK_REMOTE, TEST_INDEX_BANK));
+    verifyColumn(result, columnName("count()"), columnName("gender"));
+  }
 }
